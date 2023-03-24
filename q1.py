@@ -10,6 +10,7 @@ df = pd.read_csv('./pmm_q1.tsv')
 data = df.to_numpy()
 data_arr = [x[0] for x in data]
 
+## Use K-means clustering to initialize model parameters
 kmeans = KMeans(n_clusters=3, n_init='auto').fit(data.reshape(-1,1))
 kmeans_result = kmeans.predict(data.reshape(-1,1))
 
@@ -17,6 +18,7 @@ cluster_0 = []
 cluster_1 = []
 cluster_2 = []
 
+## For each cluster, group and determine lambdas and pis
 for idx, val in enumerate(kmeans_result):
   if val == 0:
     cluster_0.append(data[idx][0])
@@ -36,10 +38,11 @@ initial_lambdas = [poissonMLE(cluster_0), poissonMLE(cluster_1), poissonMLE(clus
 initial_pis = [calculate_pi(cluster_0), calculate_pi(cluster_1), calculate_pi(cluster_2)]
 alphas = [2, 2, 2]
 
-## Objective function values
-## log likelihoods + summation of log priors
+## Termination criterion values
+## log-likelihoods + summation of log-priors
 log_likelihoods = []
 
+## Keep a log of all lambdas and pis generated so far
 lambda_history = []
 lambda_history.append(initial_lambdas)
 pi_history = []
@@ -61,6 +64,7 @@ def calculate_log_ll(lambdas, pis):
   log_ll += math.log(dirichlet.pdf(pi_history[-1], alphas))
   log_likelihoods.append(log_ll)
 
+## Calculate the log-likelihood + log-prior based on initial params
 calculate_log_ll(initial_lambdas, initial_pis)
 
 def calculate_r_ik(i, k):
@@ -107,11 +111,13 @@ def executeEM():
 
   lambda_history.append(new_lambda_vector)
   pi_history.append(new_pi_vector)
+  ## Calculate the new log-likelihood + log-prior
   calculate_log_ll(new_lambda_vector, new_pi_vector)
 
 delta = math.inf
 epsilon = 1e-5
 
+## Iterate until termination condition is met
 while delta > epsilon:
   executeEM()
   delta = abs(log_likelihoods[-1] - log_likelihoods[-2])
