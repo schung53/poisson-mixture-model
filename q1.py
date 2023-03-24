@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
-from scipy.stats import poisson, gamma
+from scipy.stats import poisson, gamma, dirichlet
 from scipy.special import factorial
 
 df = pd.read_csv('./pmm_q1.tsv')
@@ -34,6 +34,7 @@ def calculate_pi(cluster):
 ## Initial parameters setup
 initial_lambdas = [poissonMLE(cluster_0), poissonMLE(cluster_1), poissonMLE(cluster_2)]
 initial_pis = [calculate_pi(cluster_0), calculate_pi(cluster_1), calculate_pi(cluster_2)]
+alphas = [2, 2, 2]
 
 ## Objective function values
 ## log likelihoods + summation of log priors
@@ -46,7 +47,6 @@ pi_history.append(initial_pis)
 
 def calculate_log_ll(lambdas, pis):
   log_ll = 0
-  log_prior = 0
   for i in range(len(data)):
     x_i = data[i][0]
     ll_sum = 0
@@ -57,8 +57,9 @@ def calculate_log_ll(lambdas, pis):
     log_ll += math.log(ll_sum)
   for k in range(3):
     lambda_k = lambdas[k]
-    log_prior += math.log(gamma.pdf(lambda_k, 2, loc=0, scale=0.5))
-  log_likelihoods.append(log_ll + log_prior)
+    log_ll += math.log(gamma.pdf(lambda_k, 2, loc=0, scale=0.5))
+  log_ll += math.log(dirichlet.pdf(pi_history[-1], alphas))
+  log_likelihoods.append(log_ll)
 
 calculate_log_ll(initial_lambdas, initial_pis)
 
